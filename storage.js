@@ -7,7 +7,7 @@ export async function startTracking(siteUrl) {
     chrome.storage.local
         .set({ currentActive: [currentTime, siteUrl] })
         .then(() => {
-            console.log(`set ${siteUrl}`);
+            // console.log(`set ${siteUrl}`);
         });
 
     // check if the site has a time recorded
@@ -22,7 +22,7 @@ export async function startTracking(siteUrl) {
         urlCollection["url"][siteUrl] = 0;
         await chrome.storage.local.set({ url: urlCollection["url"] });
     }
-    console.log(await chrome.storage.local.get("url"));
+    await chrome.storage.local.get("url");
 }
 
 /*
@@ -36,7 +36,7 @@ export async function endTracking() {
 
     // if the user starts with an activity that never got recorded
     if (!active.currentActive) {
-        console.log("current active was null");
+        // console.log("current active was null");
         return;
     }
     let activeStarted = active.currentActive[0];
@@ -46,7 +46,7 @@ export async function endTracking() {
     // set the time in the url colection and set currentActive to null
     let urlCollection = await chrome.storage.local.get("url");
     urlCollection["url"][activeUrl] += delta;
-    console.log("WAS CHECKING URL COLL: ", urlCollection);
+    // console.log("WAS CHECKING URL COLL: ", urlCollection);
     // update the urlCollection to reflect the change
     await chrome.storage.local.set({ url: urlCollection["url"] });
     // disable the currentActive
@@ -55,7 +55,7 @@ export async function endTracking() {
 
 export function viewUrlCollection() {
     chrome.storage.local.get("url").then((result) => {
-        console.log("URL view\n");
+        // console.log("URL view\n");
         console.log(result);
     });
 }
