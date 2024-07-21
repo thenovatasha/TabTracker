@@ -1,17 +1,17 @@
 import {
     startTracking,
     endTracking,
-    viewCurrentActive,
     viewUrlCollection,
-} from "./storage.js";
-// chrome.storage.local.clear();
+} from "./utils/storage.js";
 const regex = /(?<=:\/\/)(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/;
 
-// let matchedUrl = prevUrl.match(regex);
+// Open the side panel
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
 /**
  * Tab Events
  */
+
 // when the current tab updates
 chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
     if (changeInfo.status === "complete") {
@@ -23,10 +23,8 @@ chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
 });
 
 // when the tab selection changes
-chrome.tabs.onActivated.addListener((activeInfo) => {
-    // console.log("tab: onActivated");
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
     // get the current tab info and match the url for the domain
-    // console.log(activeInfo.tabId);
     chrome.tabs.get(activeInfo.tabId, async (tab) => {
         const urlGroups = tab.url.match(regex);
         // tab might not have a url set yet
@@ -34,17 +32,14 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
             return;
         }
         // tab has a url set
-        // console.log(urlGroups[1]);
         // end the previous tracking, and start this one
         await endTracking();
         await startTracking(urlGroups[1]);
     });
-    viewUrlCollection();
 });
 
 // when a tab is closed
 chrome.tabs.onRemoved.addListener(async () => {
-    // console.log("tab: onRemoved");
     await endTracking();
     viewUrlCollection();
 });
@@ -53,29 +48,36 @@ chrome.tabs.onRemoved.addListener(async () => {
  * Window events
  */
 
-// chrome.windows.onCreated.addListener(() => {
-//     console.log("Window: onCreated");
-// });
-
 // When another window is selected (even as a result of another
 // window being closed)
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
-    // console.log("window: onFocusChanged");
-    // query active tab
-    // console.log(windowId);
+    // check if there is a new window
     if (windowId === -1) {
         return;
     }
+    // get all the details details window
     const windowDetails = await chrome.windows.get(windowId, {
         populate: true,
     });
+    if (!windowDetails) {
+        await endTracking();
+        viewUrlCollection();
+        return;
+    }
 
+    // query for the active tab in the new window
     let siteUrl;
-    windowDetails["tabs"].forEach((element) => {
+    windowDetails["tabs"].forEach(async (element) => {
         if (element.active === true) {
-            siteUrl = element.url.match(regex)[1];
+            try {
+                siteUrl = element.url.match(regex)[1];
+            } catch (e) {
+                console.log(`ERROR CAUGHT ${e}`);
+            }
         }
     });
+
+    // check if the tab has a url set, if not, onUpdate will handle it
     await endTracking();
     if (siteUrl) {
         await startTracking(siteUrl);
@@ -85,11 +87,11 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
 
 // In case the window is closed brute force (and not tab by tab)
 chrome.windows.onRemoved.addListener(async () => {
-    // console.log("window: onRemoved");
     await endTracking();
     viewUrlCollection();
 });
 
+// seems to give inaccurate results when watching video, for future thought
 chrome.idle.onStateChanged.addListener(() =>
     console.log("window: onStateChanged")
 );

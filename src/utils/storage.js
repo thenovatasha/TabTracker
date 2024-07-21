@@ -4,11 +4,7 @@
 export async function startTracking(siteUrl) {
     // set the currentActive to this site
     let currentTime = Date.now();
-    chrome.storage.local
-        .set({ currentActive: [currentTime, siteUrl] })
-        .then(() => {
-            // console.log(`set ${siteUrl}`);
-        });
+    await chrome.storage.local.set({ currentActive: [currentTime, siteUrl] });
 
     // check if the site has a time recorded
     // if no time is recorded, set it to 0
