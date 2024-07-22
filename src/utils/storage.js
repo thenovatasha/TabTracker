@@ -3,6 +3,7 @@
  */
 export async function startTracking(siteUrl) {
     // set the currentActive to this site
+    console.log("starting tracking");
     let currentTime = Date.now();
     await chrome.storage.local.set({ currentActive: [currentTime, siteUrl] });
 
@@ -25,6 +26,7 @@ export async function startTracking(siteUrl) {
  * Calculate the time spent, end the tracking by setting the active to null
  */
 export async function endTracking() {
+    console.log("ending tracking");
     let currentTime = Date.now();
 
     // calculate the time between this tab's start and end
@@ -61,4 +63,12 @@ export function viewCurrentActive() {
         console.log("Current Active\n");
         console.log(result);
     });
+}
+
+export async function setActiveId(id) {
+    await chrome.storage.local.set({"activeId": id});
+}
+
+export async function disableActiveId() {
+    await chrome.storage.local.set({"activeId": null});
 }
